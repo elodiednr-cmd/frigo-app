@@ -543,6 +543,9 @@
 // ── CONFIG ──────────────────────────────────────────────────
 let CFG = { url: '', key: '' };
 
+// URL absolue du proxy, calculée une seule fois au démarrage
+const PROXY_URL = window.location.origin + '/api/proxy';
+
 function loadConfig() {
   try {
     const saved = localStorage.getItem('frigo_cfg');
@@ -648,11 +651,11 @@ async function refreshAll() {
 }
 
 // ── API ──────────────────────────────────────────────────────
-// Toutes les requêtes passent par le proxy Netlify (/api/proxy)
+// Toutes les requêtes passent par le proxy Netlify (PROXY_URL absolu)
 // Le proxy transmet à Apps Script côté serveur → zéro CORS
 async function api(action, extra = {}) {
   const params = Object.assign({ action, key: CFG.key }, extra);
-  const res = await fetch('/api/proxy', {
+  const res = await fetch(PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
