@@ -1,6 +1,5 @@
-// Fonction Netlify : proxy entre l'app et Google Apps Script
-// Reçoit les requêtes de l'app, les transmet à Apps Script côté serveur
-// → Zéro problème CORS car c'est serveur→serveur
+// Proxy Netlify → Google Apps Script
+// Reçoit POST JSON depuis l'app, transmet en GET à Apps Script
 
 exports.handler = async function(event) {
   const CORS = {
@@ -9,40 +8,55 @@ exports.handler = async function(event) {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  // Répondre au preflight OPTIONS
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: CORS, body: '' };
   }
 
+  const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
+  if (!APPS_SCRIPT_URL) {
+    return {
+      statusCode: 500, headers: CORS,
+      body: JSON.stringify({ error: "Variable APPS_SCRIPT_URL manquante dans Netlify" })
+    };
+  }
+
+  // Récupérer les paramètres (POST JSON ou GET)
+  let params = {};
   try {
-    // Récupérer les paramètres (GET ou POST)
-    let params = {};
-    if (event.httpMethod === 'POST' && event.body) {
-      try { params = JSON.parse(event.body); }
-      catch(e) {
-        // form-urlencoded fallback
-        new URLSearchParams(event.body).forEach((v, k) => params[k] = v);
-      }
+    if (event.body) {
+      params = JSON.parse(event.body);
     } else if (event.queryStringParameters) {
       params = event.queryStringParameters;
     }
+  } catch(e) {
+    return {
+      statusCode: 400, headers: CORS,
+      body: JSON.stringify({ error: "Corps de requête invalide : " + e.message })
+    };
+  }
 
-    const { APPS_SCRIPT_URL } = process.env;
-    if (!APPS_SCRIPT_URL) {
-      return { statusCode: 500, headers: CORS,
-        body: JSON.stringify({ error: "APPS_SCRIPT_URL non configuré dans Netlify" }) };
-    }
+  // Construire l'URL GET vers Apps Script
+  const qs = Object.entries(params)
+    .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(String(v)))
+    .join('&');
+  const targetUrl = APPS_SCRIPT_URL + '?' + qs;
 
-    // Transmettre à Apps Script via GET (serveur→serveur, pas de CORS)
-    const qs = new URLSearchParams(params).toString();
-    const url = `${APPS_SCRIPT_URL}?${qs}`;
-
-    const response = await fetch(url, {
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'GET',
       redirect: 'follow',
       headers: { 'User-Agent': 'FrigoApp-Proxy/1.0' },
     });
 
     const text = await response.text();
+
+    // Vérifier que la réponse est du JSON valide
+    try { JSON.parse(text); } catch(e) {
+      return {
+        statusCode: 502, headers: CORS,
+        body: JSON.stringify({ error: "Réponse Apps Script non-JSON : " + text.slice(0, 200) })
+      };
+    }
 
     return {
       statusCode: 200,
@@ -52,9 +66,8 @@ exports.handler = async function(event) {
 
   } catch(err) {
     return {
-      statusCode: 500,
-      headers: CORS,
-      body: JSON.stringify({ error: 'Proxy error: ' + err.message }),
+      statusCode: 502, headers: CORS,
+      body: JSON.stringify({ error: "Erreur proxy : " + err.message })
     };
   }
 };
