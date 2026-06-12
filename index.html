@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Frigo">
+<meta name="theme-color" content="#1a1a2e">
+<title>Frigo — Mon stock</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --bg2: #1a1a2e;
+    --bg3: #252540;
+    --card: #1e1e35;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0eeff;
+    --text2: #9b97c4;
+    --text3: #6b6896;
+    --accent: #7c6bff;
+    --accent2: #a394ff;
+    --accent-dim: rgba(124,107,255,0.15);
+    --green: #4caf82;
+    --green-dim: rgba(76,175,130,0.15);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.15);
+    --amber: #ffb347;
+    --amber-dim: rgba(255,179,71,0.15);
+    --radius: 14px;
+    --radius-sm: 9px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ── SETUP SCREEN ── */
+  #setup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+  #setup .logo { font-size: 56px; }
+  #setup h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; text-align: center; }
+  #setup p { font-size: 14px; color: var(--text2); text-align: center; line-height: 1.6; }
+  .setup-field { width: 100%; }
+  .setup-field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.04em; }
+  .setup-field input {
+    width: 100%; padding: 14px 16px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-size: 14px; outline: none;
+  }
+  .setup-field input:focus { border-color: var(--accent); }
+
+  /* ── APP SHELL ── */
+  #app { display: none; flex-direction: column; min-height: 100dvh; }
+
+  .topbar {
+    padding: 16px 20px 12px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-title { font-size: 17px; font-weight: 600; }
+  .topbar-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg3); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: var(--text2);
+    transition: background 0.15s;
+  }
+  .icon-btn:active { background: var(--bg2); }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px calc(80px + var(--safe-bottom));
+  }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding-bottom: var(--safe-bottom);
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 20;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 4px 12px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); font-size: 10px; gap: 4px;
+    transition: color 0.15s;
+  }
+  .nav-btn .nav-icon { font-size: 22px; }
+  .nav-btn.active { color: var(--accent2); }
+  .nav-badge {
+    position: absolute; top: 6px; right: calc(50% - 18px);
+    background: var(--red); color: white;
+    font-size: 9px; font-weight: 700;
+    width: 16px; height: 16px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-btn-wrap { position: relative; display: flex; }
+
+  /* ── SECTIONS ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .card-row { display: flex; align-items: center; justify-content: space-between; }
+
+  /* ── URGENT BANNER ── */
+  .urgent-banner {
+    background: var(--red-dim);
+    border: 1px solid rgba(255,107,107,0.25);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+  }
+  .urgent-banner-icon { font-size: 22px; }
+  .urgent-banner-text { font-size: 13px; color: #ff9f9f; line-height: 1.4; }
+  .urgent-banner-text strong { color: var(--red); }
+
+  /* ── CHAT ── */
+  .chat-area {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 14px;
+    margin-bottom: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .bubble {
+    max-width: 85%; padding: 10px 14px;
+    border-radius: 18px; font-size: 14px; line-height: 1.5;
+  }
+  .bubble.ai {
+    background: var(--bg3); color: var(--text);
+    border-bottom-left-radius: 5px; align-self: flex-start;
+  }
+  .bubble.user {
+    background: var(--accent); color: white;
+    border-bottom-right-radius: 5px; align-self: flex-end;
+  }
+  .chat-input-row { display: flex; gap: 8px; align-items: flex-end; }
+  .chat-input {
+    flex: 1; background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 22px;
+    padding: 12px 16px; color: var(--text);
+    font-size: 14px; outline: none; resize: none;
+    line-height: 1.4; max-height: 120px; font-family: inherit;
+  }
+  .chat-input:focus { border-color: var(--accent); }
+  .send-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: white; flex-shrink: 0;
+    transition: transform 0.1s, opacity 0.15s;
+  }
+  .send-btn:active { transform: scale(0.94); }
+  .send-btn:disabled { opacity: 0.4; }
+
+  /* Dots animation */
+  .dots { display: inline-flex; gap: 4px; align-items: center; padding: 2px 0; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text3); animation: pulse 1.3s infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* ── STOCK LIST ── */
+  .section-label {
+    font-size: 11px; font-weight: 600; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 16px 0 8px;
+  }
+  .stock-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    margin-bottom: 7px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .stock-item.urgent-item { border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.06); }
+  .item-emoji { font-size: 22px; width: 30px; text-align: center; flex-shrink: 0; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-meta { font-size: 12px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .badge {
+    font-size: 10px; font-weight: 600; padding: 3px 9px;
+    border-radius: 99px;
+  }
+  .badge-urgent { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,107,107,0.3); }
+  .badge-ok { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,130,0.3); }
+  .trash-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 16px; color: var(--text3); padding: 4px;
+    border-radius: 6px; transition: color 0.15s, background 0.15s;
+  }
+  .trash-btn:active { color: var(--red); background: var(--red-dim); }
+
+  /* ── SEARCH ── */
+  .search-wrap { position: relative; margin-bottom: 14px; }
+  .search-input {
+    width: 100%; padding: 11px 16px 11px 40px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 99px; color: var(--text); font-size: 14px; outline: none;
+    font-family: inherit;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text3); }
+
+  /* ── RECETTES ── */
+  .recipe-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
+  }
+  .recipe-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .recipe-desc { font-size: 13px; color: var(--text2); line-height: 1.55; margin-bottom: 10px; }
+  .recipe-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chip {
+    font-size: 11px; padding: 4px 10px;
+    border-radius: 99px; background: var(--bg3);
+    color: var(--text2); border: 1px solid var(--border);
+  }
+  .chip.urgent { background: var(--red-dim); color: var(--red); border-color: rgba(255,107,107,0.3); }
+  .btn-outline {
+    width: 100%; padding: 11px;
+    background: var(--accent-dim); border: 1px solid rgba(124,107,255,0.3);
+    border-radius: var(--radius-sm); color: var(--accent2);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-outline:active { background: rgba(124,107,255,0.25); }
+
+  /* ── PRIMARY BTN ── */
+  .btn-primary {
+    width: 100%; padding: 14px;
+    background: var(--accent); border: none;
+    border-radius: var(--radius-sm); color: white;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.4; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--text3); font-size: 14px; line-height: 1.7;
+  }
+  .empty-icon { font-size: 42px; display: block; margin-bottom: 12px; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: calc(80px + var(--safe-bottom) + 12px);
+    left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg3); border: 1px solid var(--border2);
+    color: var(--text); padding: 10px 20px;
+    border-radius: 99px; font-size: 13px;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; z-index: 100; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── LOADER OVERLAY ── */
+  #loader {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; z-index: 200; transition: opacity 0.3s;
+  }
+  #loader .loader-icon { font-size: 52px; }
+  #loader p { color: var(--text2); font-size: 14px; }
+  .spin {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TABS inside sections ── */
+  .tabs { display: flex; background: var(--bg3); border-radius: 10px; padding: 3px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 8px; border-radius: 8px; border: none; background: none; color: var(--text2); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .tab.active { background: var(--card); color: var(--text); border: 1px solid var(--border2); }
+
+  /* Quick actions */
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .quick-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px;
+    font-size: 12px; color: var(--text2); cursor: pointer;
+    text-align: left; display: flex; flex-direction: column; gap: 6px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .quick-btn:active { background: var(--bg2); border-color: var(--accent); }
+  .quick-btn .quick-icon { font-size: 20px; }
+
+  /* Config link */
+  .config-link { font-size: 12px; color: var(--text3); text-align: center; margin-top: 20px; cursor: pointer; text-decoration: underline; }
+
+  /* ── CONFIG MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 300; display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-sheet {
+    width: 100%; background: var(--bg2);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(20px + var(--safe-bottom));
+    border-top: 1px solid var(--border2);
+    transform: translateY(100%); transition: transform 0.3s ease;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-handle {
+    width: 36px; height: 4px; background: var(--border2);
+    border-radius: 2px; margin: 0 auto -4px;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; text-align: center; }
+  .modal-status {
+    background: var(--green-dim); border: 1px solid rgba(76,175,130,0.3);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 13px; color: var(--green); display: flex; gap: 8px; align-items: center;
+  }
+  .modal-status.error { background: var(--red-dim); border-color: rgba(255,107,107,0.3); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-icon">🥦</div>
+  <div class="spin"></div>
+  <p>Chargement du stock…</p>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setup" style="display:none">
+  <div class="logo">🥦</div>
+  <h1>Frigo — Mon stock</h1>
+  <p>Connecte l'app à ton Google Sheet pour commencer.</p>
+
+  <div class="setup-field">
+    <label>URL de ton Apps Script (API)</label>
+    <input type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec">
+  </div>
+  <div class="setup-field">
+    <label>Clé secrète</label>
+    <input type="text" id="cfg-key" placeholder="CHANGE_MOI_12345">
+  </div>
+
+  <button class="btn-primary" onclick="saveConfig()">Connecter →</button>
+
+  <p style="font-size:12px;color:var(--text3);line-height:1.6">
+    Déploie d'abord le fichier <strong>Code.gs</strong> dans Apps Script,<br>
+    puis colle l'URL de déploiement ici.
+  </p>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🥦 Mon stock</div>
+      <div class="topbar-sub" id="topbar-sub">Chargement…</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="icon-btn" onclick="refreshAll()" title="Rafraîchir">↻</div>
+      <div class="icon-btn" onclick="openConfig()" title="Réglages">⚙️</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- COURSES TAB -->
+    <div class="section active" id="sec-courses">
+      <div id="urgent-banner-wrap"></div>
+
+      <div class="quick-grid">
+        <button class="quick-btn" onclick="quickPrompt('J\'ai fait les courses : ')">
+          <span class="quick-icon">🛒</span>
+          <span>Retour courses</span>
+        </button>
+        <button class="quick-btn" onclick="quickPrompt('J\'ai cuisiné ')">
+          <span class="quick-icon">🍳</span>
+          <span>J'ai cuisiné</span>
+        </button>
+        <button class="quick-btn" onclick="quickPrompt('Propose-moi des recettes pour finir mes stocks urgents')">
+          <span class="quick-icon">✨</span>
+          <span>Recettes urgentes</span>
+        </button>
+        <button class="quick-btn" onclick="quickPrompt('Qu\'est-ce que je dois racheter bientôt ?')">
+          <span class="quick-icon">📋</span>
+          <span>Liste à acheter</span>
+        </button>
+      </div>
+
+      <div class="chat-area" id="chatbox"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="userinput" placeholder="Dis-moi ce que tu as acheté, cuisiné…" rows="1"
+          oninput="autoResize(this)"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">↑</button>
+      </div>
+    </div>
+
+    <!-- STOCK TAB -->
+    <div class="section" id="sec-stock">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="search" placeholder="Rechercher un produit…"
+          oninput="filterStock(this.value)">
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchStockTab('all',this)">Tout</button>
+        <button class="tab" onclick="switchStockTab('urgent',this)">🔴 Urgents</button>
+        <button class="tab" onclick="switchStockTab('racheter',this)">🛒 À racheter</button>
+      </div>
+
+      <div id="stock-list-wrap"></div>
+    </div>
+
+    <!-- RECETTES TAB -->
+    <div class="section" id="sec-recettes">
+      <button class="btn-primary" style="margin-bottom:16px" onclick="genRecettes()">
+        ✨ Générer des recettes pour mes urgents
+      </button>
+      <div id="recettes-wrap">
+        <div class="empty">
+          <span class="empty-icon">👩‍🍳</span>
+          Clique pour générer des recettes adaptées à tes stocks urgents.
+        </div>
+      </div>
+    </div>
+
+    <!-- MEAL PREP TAB -->
+    <div class="section" id="sec-mealprep">
+      <div id="mealprep-wrap">
+        <div class="empty"><span class="empty-icon">📅</span>Chargement du planning…</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('courses',this)">
+      <span class="nav-icon">💬</span>
+      <span>Assistant</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('stock',this)" style="position:relative">
+      <div class="nav-btn-wrap">
+        <span class="nav-icon">🧺</span>
+        <span id="urgent-count-badge" class="nav-badge" style="display:none">0</span>
+      </div>
+      <span>Stock</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('recettes',this)">
+      <span class="nav-icon">👩‍🍳</span>
+      <span>Recettes</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('mealprep',this)">
+      <span class="nav-icon">📅</span>
+      <span>Meal prep</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="cfg-modal" onclick="closeConfigIfOutside(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Configuration</div>
+    <div id="cfg-status" class="modal-status">✅ Connecté à Google Sheet</div>
+    <div class="setup-field">
+      <label>URL Apps Script</label>
+      <input type="url" id="cfg-url-modal" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="setup-field">
+      <label>Clé secrète</label>
+      <input type="text" id="cfg-key-modal" placeholder="Ta clé secrète">
+    </div>
+    <button class="btn-primary" onclick="saveConfigModal()">Enregistrer et reconnecter</button>
+    <button onclick="closeConfig()" style="background:none;border:none;color:var(--text3);font-size:14px;padding:8px;cursor:pointer">Annuler</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+let CFG = { url: '', key: '' };
+
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem('frigo_cfg');
+    if (saved) CFG = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { showToast('Remplis les deux champs'); return; }
+  CFG = { url, key };
+  localStorage.setItem('frigo_cfg', JSON.stringify(CFG));
+  initApp();
+}
+
+// ── CONFIG MODAL ──────────────────────────────────────────────
+function openConfig() {
+  const modal = document.getElementById('cfg-modal');
+  document.getElementById('cfg-url-modal').value = CFG.url || '';
+  document.getElementById('cfg-key-modal').value = CFG.key || '';
+  const status = document.getElementById('cfg-status');
+  if (CFG.url && CFG.key) {
+    status.className = 'modal-status';
+    status.textContent = '✅ Connecté — ' + CFG.url.slice(0, 50) + '…';
+  } else {
+    status.className = 'modal-status error';
+    status.textContent = '❌ Non configuré';
+  }
+  modal.classList.add('open');
+}
+
+function closeConfig() {
+  document.getElementById('cfg-modal').classList.remove('open');
+}
+
+function closeConfigIfOutside(e) {
+  if (e.target === document.getElementById('cfg-modal')) closeConfig();
+}
+
+function saveConfigModal() {
+  const url = document.getElementById('cfg-url-modal').value.trim();
+  const key = document.getElementById('cfg-key-modal').value.trim();
+  if (!url || !key) { showToast('Remplis les deux champs'); return; }
+  CFG = { url, key };
+  localStorage.setItem('frigo_cfg', JSON.stringify(CFG));
+  closeConfig();
+  showToast('✅ Config enregistrée !');
+  refreshAll();
+}
+
+// ── STATE ────────────────────────────────────────────────────
+let allStock = [];
+let urgentItems = [];
+let recipeIdeas = [];
+let currentStockFilter = 'all';
+let chatHistory = [];
+
+// ── INIT ─────────────────────────────────────────────────────
+async function init() {
+  loadConfig();
+  if (!CFG.url || !CFG.key) {
+    hideLoader();
+    document.getElementById('setup').style.display = 'flex';
+    return;
+  }
+  await initApp();
+}
+
+async function initApp() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  showLoader('Chargement du stock…');
+
+  try {
+    await refreshAll();
+    addBubble('ai', 'Bonjour ! 👋 Dis-moi ce que tu as acheté, ce que tu as cuisiné, ou demande-moi des recettes pour finir tes stocks urgents.');
+  } catch(e) {
+    addBubble('ai', '⚠️ Impossible de contacter le Google Sheet. Vérifie l\'URL et la clé dans les réglages.');
+  }
+  hideLoader();
+}
+
+async function refreshAll() {
+  showLoader('Mise à jour…');
+  try {
+    const [stockRes, urgentRes, recipesRes] = await Promise.all([
+      api('getStock'),
+      api('getUrgent'),
+      api('getRecipes'),
+    ]);
+    allStock = stockRes.items || [];
+    urgentItems = urgentRes.items || [];
+    recipeIdeas = recipesRes.items || [];
+
+    renderUrgentBanner();
+    renderStockList();
+    renderMealPrep();
+    updateTopbar();
+  } finally {
+    hideLoader();
+  }
+}
+
+// ── API ──────────────────────────────────────────────────────
+// Toutes les requêtes passent par le proxy Netlify (/api/proxy)
+// Le proxy transmet à Apps Script côté serveur → zéro CORS
+async function api(action, extra = {}) {
+  const params = Object.assign({ action, key: CFG.key }, extra);
+  const res = await fetch('/api/proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// ── CLAUDE API ───────────────────────────────────────────────
+async function askClaude(userMsg) {
+  const urgentList = urgentItems.map(i => i.produit).join(', ') || 'aucun';
+  const stockList = allStock.slice(0, 60).map(i => `${i.produit} (${i.quantite})`).join(', ');
+  const recipeList = recipeIdeas.map(r => r.nom).join(', ');
+
+  const systemPrompt = `Tu es un assistant de gestion de stock alimentaire intelligent. Tu aides l'utilisatrice (prénom : Elodie) à gérer son stock en langage naturel.
+
+Contexte du stock :
+- Produits URGENTS à finir : ${urgentList}
+- Stock complet (extrait) : ${stockList}
+- Recettes dans la liste : ${recipeList}
+
+Tes capacités :
+1. Si Elodie dit qu'elle a ACHETÉ quelque chose, extrait les produits achetés et réponds en incluant obligatoirement ce bloc JSON à la fin de ta réponse :
+   [ACTION:ADD] {"items": [{"produit": "Nom", "quantite": "X", "type": "Catégorie", "peremption": ""}]}
+   
+2. Si elle dit qu'elle a CUISINÉ ou UTILISÉ quelque chose, extrais les ingrédients consommés et réponds avec :
+   [ACTION:REMOVE] {"items": ["Produit1", "Produit2"]}
+   
+3. Si elle demande des RECETTES ou des suggestions, propose 2-3 recettes concrètes adaptées à ses stocks urgents, en mentionnant les ingrédients déjà disponibles.
+
+4. Si elle demande ce qu'elle doit RACHETER, liste les produits marqués "à acheter" et les urgents qui finissent.
+
+Règles :
+- Réponds TOUJOURS en français, de façon chaleureuse et concise
+- N'inclus le bloc JSON que si une action réelle est demandée
+- Si tu proposes une recette, sois précise sur les quantités et étapes clés`;
+
+  const messages = [...chatHistory, { role: 'user', content: userMsg }];
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages,
+    }),
+  });
+
+  const data = await res.json();
+  return data.content?.[0]?.text || 'Désolée, je n\'ai pas pu répondre.';
+}
+
+// ── CHAT ─────────────────────────────────────────────────────
+async function sendMsg() {
+  const inp = document.getElementById('userinput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+
+  inp.value = '';
+  inp.style.height = 'auto';
+  addBubble('user', txt);
+  chatHistory.push({ role: 'user', content: txt });
+
+  const loadEl = addLoadingBubble();
+  document.getElementById('send-btn').disabled = true;
+
+  try {
+    const reply = await askClaude(txt);
+    loadEl.remove();
+
+    const cleanReply = await processActions(reply);
+    addBubble('ai', cleanReply);
+    chatHistory.push({ role: 'assistant', content: cleanReply });
+
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-16);
+  } catch(e) {
+    loadEl.remove();
+    const msg = e.message || 'erreur inconnue';
+    addBubble('ai', '⚠️ Erreur : ' + msg);
+    console.error('sendMsg error:', e);
+  }
+
+  document.getElementById('send-btn').disabled = false;
+}
+
+async function processActions(text) {
+  let clean = text;
+
+  // ADD action
+  const addMatch = text.match(/\[ACTION:ADD\]\s*(\{.*?\})/s);
+  if (addMatch) {
+    clean = text.replace(/\[ACTION:ADD\][\s\S]*$/, '').trim();
+    try {
+      const payload = JSON.parse(addMatch[1]);
+      for (const item of payload.items) {
+        await api('addItem', item);
+      }
+      await refreshAll();
+      showToast('✅ Stock mis à jour !');
+    } catch(e) {
+      console.warn('ADD error:', e);
+      showToast('⚠️ Erreur sync Sheet : ' + e.message);
+    }
+  }
+
+  // REMOVE action
+  const removeMatch = text.match(/\[ACTION:REMOVE\]\s*(\[.*?\])/s);
+  if (removeMatch) {
+    clean = text.replace(/\[ACTION:REMOVE\][\s\S]*$/, '').trim();
+    try {
+      const items = JSON.parse(removeMatch[1]);
+      for (const produit of items) {
+        await api('removeItem', { produit });
+      }
+      await refreshAll();
+      showToast('🗑️ Produits retirés du stock');
+    } catch(e) {
+      console.warn('REMOVE error:', e);
+      showToast('⚠️ Erreur sync Sheet : ' + e.message);
+    }
+  }
+
+  return clean;
+}
+
+function addBubble(role, text) {
+  const box = document.getElementById('chatbox');
+  const el = document.createElement('div');
+  el.className = `bubble ${role}`;
+  el.textContent = text;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+function addLoadingBubble() {
+  const box = document.getElementById('chatbox');
+  const el = document.createElement('div');
+  el.className = 'bubble ai';
+  el.innerHTML = '<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+function quickPrompt(text) {
+  const inp = document.getElementById('userinput');
+  inp.value = text;
+  inp.focus();
+  inp.setSelectionRange(text.length, text.length);
+}
+
+// ── STOCK RENDER ──────────────────────────────────────────────
+function renderStockList(filter = '') {
+  const wrap = document.getElementById('stock-list-wrap');
+  let items = allStock;
+
+  if (currentStockFilter === 'urgent') items = items.filter(i => i.urgent);
+  else if (currentStockFilter === 'racheter') items = items.filter(i => i.aAcheter);
+
+  if (filter) {
+    const q = filter.toLowerCase();
+    items = items.filter(i => i.produit.toLowerCase().includes(q) || (i.type || '').toLowerCase().includes(q));
+  }
+
+  if (!items.length) {
+    wrap.innerHTML = `<div class="empty"><span class="empty-icon">🎉</span>Aucun produit ici.</div>`;
+    return;
+  }
+
+  const grouped = {};
+  items.forEach(i => {
+    const key = i.type || 'Divers';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(i);
+  });
+
+  let html = '';
+  for (const cat of Object.keys(grouped).sort()) {
+    html += `<div class="section-label">${cat}</div>`;
+    for (const item of grouped[cat]) {
+      const emoji = getEmoji(item.type);
+      const badgeHtml = item.urgent
+        ? `<span class="badge badge-urgent">🔴 Urgent</span>`
+        : `<span class="badge badge-ok">OK</span>`;
+      html += `<div class="stock-item ${item.urgent ? 'urgent-item' : ''}">
+        <span class="item-emoji">${emoji}</span>
+        <div class="item-info">
+          <div class="item-name">${item.produit}</div>
+          <div class="item-meta">${item.quantite || '—'}${item.peremption ? ' · ⏰ ' + item.peremption : ''}</div>
+        </div>
+        <div class="item-right">
+          ${badgeHtml}
+          <button class="trash-btn" onclick="deleteItem('${item.produit.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </div>`;
+    }
+  }
+  wrap.innerHTML = html;
+}
+
+async function deleteItem(produit) {
+  if (!confirm(`Supprimer "${produit}" du stock ?`)) return;
+  try {
+    await api('removeItem', { produit });
+    allStock = allStock.filter(i => i.produit !== produit);
+    urgentItems = urgentItems.filter(i => i.produit !== produit);
+    renderStockList();
+    renderUrgentBanner();
+    updateTopbar();
+    showToast('Produit supprimé');
+  } catch(e) {
+    showToast('Erreur : ' + e.message);
+  }
+}
+
+function filterStock(val) {
+  renderStockList(val);
+}
+
+function switchStockTab(tab, el) {
+  currentStockFilter = tab;
+  document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderStockList();
+}
+
+// ── URGENT BANNER ──────────────────────────────────────────────
+function renderUrgentBanner() {
+  const wrap = document.getElementById('urgent-banner-wrap');
+  const badge = document.getElementById('urgent-count-badge');
+
+  if (!urgentItems.length) {
+    wrap.innerHTML = '';
+    badge.style.display = 'none';
+    return;
+  }
+
+  badge.textContent = urgentItems.length;
+  badge.style.display = 'flex';
+
+  const names = urgentItems.slice(0, 3).map(i => i.produit).join(', ');
+  const more = urgentItems.length > 3 ? ` et ${urgentItems.length - 3} autres` : '';
+  wrap.innerHTML = `<div class="urgent-banner" onclick="switchTab('stock', document.querySelectorAll('.nav-btn')[1]); switchStockTab('urgent', document.querySelectorAll('.tab')[1])">
+    <span class="urgent-banner-icon">🔴</span>
+    <div class="urgent-banner-text">
+      <strong>${urgentItems.length} produit${urgentItems.length>1?'s':''} urgents</strong><br>
+      ${names}${more}
+    </div>
+  </div>`;
+}
+
+// ── RECETTES ──────────────────────────────────────────────────
+async function genRecettes() {
+  const wrap = document.getElementById('recettes-wrap');
+  wrap.innerHTML = `<div class="empty"><div class="spin" style="margin:0 auto 12px"></div>Génération en cours…</div>`;
+
+  const urgentList = urgentItems.map(i => i.produit).join(', ') || 'purée de noisette, dattes, cannellonis';
+  const stockList = allStock.slice(0, 40).map(i => i.produit).join(', ');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `Tu es un chef spécialisé en meal prep végétarien. Réponds UNIQUEMENT en JSON valide, sans balises markdown, sans texte avant ou après.`,
+        messages: [{
+          role: 'user',
+          content: `Propose 3 recettes de meal prep pour utiliser en priorité ces produits urgents : ${urgentList}.
+Stock disponible : ${stockList}.
+Réponds en JSON : [{"titre":"...","desc":"...","urgents":["..."],"autres":["..."],"temps":"X min","portions":"X portions"}]`
+        }]
+      }),
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '[]';
+    const recipes = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    wrap.innerHTML = recipes.map(r => `
+      <div class="recipe-card">
+        <div class="recipe-title">${r.titre}</div>
+        <div class="recipe-desc">${r.desc}</div>
+        <div class="recipe-chips">
+          ${(r.urgents||[]).map(i => `<span class="chip urgent">🔴 ${i}</span>`).join('')}
+          ${(r.autres||[]).map(i => `<span class="chip">${i}</span>`).join('')}
+          <span class="chip">⏱ ${r.temps}</span>
+          <span class="chip">🍱 ${r.portions}</span>
+        </div>
+        <button class="btn-outline" onclick="askRecipeDetail('${r.titre.replace(/'/g,"\\'")}')">Voir la recette complète ↗</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty"><span class="empty-icon">⚠️</span>Erreur de génération. Réessaie.</div>`;
+  }
+}
+
+function askRecipeDetail(titre) {
+  switchTab('courses', document.querySelectorAll('.nav-btn')[0]);
+  const inp = document.getElementById('userinput');
+  inp.value = `Donne-moi la recette complète pour : ${titre}`;
+  sendMsg();
+}
+
+// ── MEAL PREP ──────────────────────────────────────────────────
+async function renderMealPrep() {
+  const wrap = document.getElementById('mealprep-wrap');
+  try {
+    const res = await api('getMealPrep');
+    const weeks = (res.items || []).filter(w => w.plat1 || w.plat2 || w.plat3);
+
+    if (!weeks.length) {
+      wrap.innerHTML = `<div class="empty"><span class="empty-icon">📅</span>Aucun meal prep planifié.</div>`;
+      return;
+    }
+
+    wrap.innerHTML = weeks.map(w => `
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-row" style="margin-bottom:8px">
+          <div style="font-size:14px;font-weight:600">${w.semaine}</div>
+          <div style="font-size:12px;color:var(--text3)">${w.du} → ${w.au}</div>
+        </div>
+        ${[w.plat1, w.plat2, w.plat3].filter(Boolean).map(p =>
+          `<div style="font-size:13px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)">🍱 ${p}</div>`
+        ).join('')}
+        ${w.enCas ? `<div style="font-size:12px;color:var(--text3);margin-top:6px">🍎 En-cas : ${w.enCas}</div>` : ''}
+      </div>
+    `).join('');
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty"><span class="empty-icon">⚠️</span>Impossible de charger le planning.</div>`;
+  }
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function getEmoji(type) {
+  const map = {
+    'Pâtes': '🍝', 'Légumineuses / Céréales': '🫘', 'Sauces': '🥫',
+    'Petit déjeuner': '☕', 'Sucrants': '🍯', 'Pâtisserie': '🧁',
+    'Oléagineux et fruits secs': '🌰', 'Protéines végétales': '💪',
+    'Conserves': '🥡', 'Asiatique': '🍜', 'Boissons / Laits': '🥛',
+    'Boissons / Jus': '🧃', 'Alcool (Bières)': '🍺',
+    'Huiles et condiments': '🫙', 'Frais/Protéines': '🧊',
+    'Snacks & Pains': '🍞', 'Graines & Co': '🌾', 'Féculents': '🍚',
+    'Lait de coco et crèmes': '🥥', 'Divers': '📦',
+  };
+  return map[type] || '🥄';
+}
+
+function updateTopbar() {
+  const sub = document.getElementById('topbar-sub');
+  sub.textContent = `${allStock.length} produits · ${urgentItems.length} urgents`;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showLoader(msg) {
+  const l = document.getElementById('loader');
+  l.querySelector('p').textContent = msg || 'Chargement…';
+  l.style.opacity = '1';
+  l.style.pointerEvents = 'all';
+}
+
+function hideLoader() {
+  const l = document.getElementById('loader');
+  l.style.opacity = '0';
+  l.style.pointerEvents = 'none';
+}
+
+// ── START ──────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
