@@ -544,7 +544,7 @@
 let CFG = { url: '', key: '' };
 
 // URL absolue du proxy, calculée une seule fois au démarrage
-const PROXY_URL = window.location.origin + '/api/proxy';
+const PROXY_URL = 'https://super-inventory-2026.netlify.app/api/proxy';
 
 function loadConfig() {
   try {
@@ -624,7 +624,7 @@ async function initApp() {
     await refreshAll();
     addBubble('ai', 'Bonjour ! 👋 Dis-moi ce que tu as acheté, ce que tu as cuisiné, ou demande-moi des recettes pour finir tes stocks urgents.');
   } catch(e) {
-    addBubble('ai', '⚠️ Impossible de contacter le Google Sheet. Vérifie l\'URL et la clé dans les réglages.');
+    addBubble('ai', '⚠️ Erreur : ' + e.message + ' — Proxy : ' + PROXY_URL); console.error('initApp:', e);
   }
   hideLoader();
 }
