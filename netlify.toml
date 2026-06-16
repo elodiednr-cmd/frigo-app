@@ -2,6 +2,11 @@
   functions = "netlify/functions"
 
 [[redirects]]
-  from = "/api/*"
+  from = "/api/proxy"
   to = "/.netlify/functions/proxy"
+  status = 200
+
+[[redirects]]
+  from = "/api/claude"
+  to = "/.netlify/functions/claude"
   status = 200
