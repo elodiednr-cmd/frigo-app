@@ -697,7 +697,7 @@ Règles :
 
   const messages = [...chatHistory, { role: 'user', content: userMsg }];
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://super-inventory-2026.netlify.app/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -707,7 +707,7 @@ Règles :
       messages,
     }),
   });
-
+  if (!res.ok) throw new Error('Claude proxy HTTP ' + res.status);
   const data = await res.json();
   return data.content?.[0]?.text || 'Désolée, je n\'ai pas pu répondre.';
 }
@@ -921,7 +921,7 @@ async function genRecettes() {
   const stockList = allStock.slice(0, 40).map(i => i.produit).join(', ');
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://super-inventory-2026.netlify.app/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
