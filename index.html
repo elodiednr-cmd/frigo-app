@@ -399,25 +399,37 @@ async function startApp() {
   document.getElementById('setup').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   showLoader();
+  // Timeout de sécurité : masque le loader après 10s quoi qu'il arrive
+  const safetyTimer = setTimeout(() => hideLoader(), 10000);
   try {
     await refreshAll();
   } catch(e) {
+    console.error('startApp error:', e);
     showToast('⚠️ ' + e.message);
+  } finally {
+    clearTimeout(safetyTimer);
+    hideLoader();
   }
-  hideLoader();
 }
 
 async function refreshAll() {
   showLoader();
   try {
+    // Requêtes en parallèle — chacune a son propre fallback si elle échoue
     const [s, u, r, m] = await Promise.all([
-      api('getStock'), api('getUrgent'), api('getRecipes'), api('getMealPrep')
+      api('getStock').catch(e => { console.warn('getStock:', e); return {items:[]}; }),
+      api('getUrgent').catch(e => { console.warn('getUrgent:', e); return {items:[]}; }),
+      api('getRecipes').catch(e => { console.warn('getRecipes:', e); return {items:[]}; }),
+      api('getMealPrep').catch(e => { console.warn('getMealPrep:', e); return {items:[]}; }),
     ]);
-    allStock = s.items || [];
-    urgentItems = u.items || [];
-    recipeIdeas = r.items || [];
-    mealPrepData = m.items || [];
-    renderAll();
+    allStock      = s.items || [];
+    urgentItems   = u.items || [];
+    recipeIdeas   = r.items || [];
+    mealPrepData  = m.items || [];
+    try { renderAll(); } catch(renderErr) {
+      console.error('renderAll error:', renderErr);
+      showToast('⚠️ Erreur affichage : ' + renderErr.message);
+    }
   } finally {
     hideLoader();
   }
@@ -601,7 +613,7 @@ function toggleHistorique() {
   const past = document.getElementById('mealprep-past');
   const btn  = document.getElementById('histo-btn');
   past.style.display = historiqueVisible ? 'block' : 'none';
-  btn.textContent = historiqueVisible ? '📜 Masquer l'historique' : '📜 Voir l'historique';
+  btn.textContent = historiqueVisible ? '📜 Masquer l\'historique' : '📜 Voir l\'historique';
 }
 
 function weekCardHTML(w, highlight) {
@@ -635,20 +647,27 @@ function renderMealPrep() {
   let current=[], future=[], past=[];
 
   weeks.forEach(w => {
-    const dateAu = parseFrDate(w.au);
-    const dateDu = parseFrDate(w.du);
+    try {
+      const dateAu = parseFrDate(w.au);
+      const dateDu = parseFrDate(w.du);
 
-    if(!dateAu && !dateDu) { future.push(w); return; }
+      if(!dateAu && !dateDu) { future.push(w); return; }
 
-    const fin  = dateAu || dateDu;
-    const debut = dateDu || dateAu;
+      const fin   = dateAu || dateDu;
+      const debut = dateDu || dateAu;
 
-    if(fin < today) {
-      past.push(w);
-    } else if(debut <= today && today <= fin) {
-      current.push(w);
-    } else {
-      future.push(w);
+      fin.setHours(23,59,59,0);
+
+      if(fin < today) {
+        past.push(w);
+      } else if(debut <= today && today <= fin) {
+        current.push(w);
+      } else {
+        future.push(w);
+      }
+    } catch(e) {
+      console.warn('parseFrDate error for week', w.semaine, e);
+      future.push(w); // fallback : mettre dans "à venir"
     }
   });
 
@@ -764,12 +783,12 @@ async function toggleRacheter(produit, valeur, btn) {
       btn.classList.add('active');
       btn.onclick = () => toggleRacheter(produit, false, btn);
       btn.title = "Retirer de la liste d'achat";
-      showToast('🛒 Ajouté à la liste d'achat');
+      showToast('🛒 Ajouté à la liste d\'achat');
     } else {
       btn.classList.remove('active');
       btn.onclick = () => toggleRacheter(produit, true, btn);
       btn.title = "Ajouter à la liste d'achat";
-      showToast('Retiré de la liste d'achat');
+      showToast('Retiré de la liste d\'achat');
     }
     renderRacheter();
   } catch(e) { showToast('⚠️ ' + e.message); }
