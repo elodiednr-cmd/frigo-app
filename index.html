@@ -30,7 +30,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 #setup h1{font-size:22px;font-weight:600;letter-spacing:-.5px;text-align:center}
 #setup p{font-size:13px;color:var(--text2);text-align:center;line-height:1.6}
 .field label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px;letter-spacing:.04em;text-transform:uppercase}
-.field input{width:100%;padding:13px 15px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:14px;outline:none;font-family:inherit}
+.field input{width:100%;padding:15px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:16px;outline:none;font-family:inherit;min-height:52px}
 .field input:focus{border-color:var(--accent)}
 .field{width:100%}
 
@@ -47,7 +47,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 /* NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;padding-bottom:var(--safe-b);background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:20}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 4px 11px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;gap:3px}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 13px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;gap:4px;min-height:56px}
 .nav-btn .ni{font-size:21px}
 .nav-btn.active{color:var(--accent2)}
 .nav-badge{position:absolute;top:5px;right:calc(50% - 20px);background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px}
@@ -69,8 +69,13 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:99px}
 .badge-urgent{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,107,107,.3)}
 .badge-ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,.3)}
-.trash-btn{background:none;border:none;cursor:pointer;font-size:15px;color:var(--text3);padding:5px;border-radius:6px}
+.trash-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:8px;border-radius:8px;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center}
 .trash-btn:active{color:var(--red)}
+.racheter-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:8px;border-radius:8px;opacity:.4;transition:opacity .15s,color .15s;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center}
+.racheter-btn.active{color:var(--amber);opacity:1}
+.racheter-btn:active{opacity:.7}
+.achete-btn{background:var(--green-dim);border:1px solid rgba(76,175,130,.35);color:var(--green);border-radius:var(--radius-sm);padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;min-height:44px;white-space:nowrap;flex-shrink:0}
+.achete-btn:active{opacity:.8}
 
 /* SEARCH & TABS */
 .search-wrap{position:relative;margin-bottom:12px}
@@ -87,7 +92,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .urgent-banner-text strong{color:var(--red)}
 
 /* FORMS & BUTTONS */
-.btn-primary{width:100%;padding:13px;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-primary{width:100%;padding:16px;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;min-height:52px}
 .btn-primary:active{opacity:.85}
 .btn-primary:disabled{opacity:.4}
 .btn-outline{width:100%;padding:11px;background:var(--accent-dim);border:1px solid rgba(124,107,255,.3);border-radius:var(--radius-sm);color:var(--accent2);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
@@ -115,7 +120,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 /* QUICK ACTIONS */
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.quick-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;font-size:12px;color:var(--text2);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:5px;font-family:inherit}
+.quick-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-size:13px;color:var(--text2);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:6px;font-family:inherit;min-height:80px}
 .quick-btn:active{background:var(--bg2);border-color:var(--accent)}
 .quick-btn .qi{font-size:20px}
 
@@ -175,7 +180,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     </div>
     <div class="top-btns">
       <div class="icon-btn" onclick="refreshAll()" title="Rafraîchir">↻</div>
-      <div class="icon-btn" onclick="openModal('cfg-modal')" title="Réglages">⚙️</div>
+      <div class="icon-btn" onclick="openCfgModal()" title="Réglages">⚙️</div>
     </div>
   </div>
 
@@ -227,7 +232,12 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
     <!-- MEAL PREP -->
     <div class="section" id="sec-mealprep">
-      <div id="mealprep-list"></div>
+      <div id="mealprep-current"></div>
+      <div id="mealprep-future"></div>
+      <div style="margin-top:6px">
+        <button class="btn-outline" onclick="toggleHistorique()" id="histo-btn">📜 Voir l'historique</button>
+      </div>
+      <div id="mealprep-past" style="display:none;margin-top:12px"></div>
     </div>
 
   </div>
@@ -299,7 +309,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     </div>
     <div class="field">
       <label>Date d'achat</label>
-      <input type="date" id="add-achat" placeholder="Date d'achat">
+      <input type="date" id="add-achat">
     </div>
     <div class="field">
       <label>Date de péremption</label>
@@ -458,6 +468,9 @@ function renderStockList() {
       const badge = item.urgent
         ? `<span class="badge badge-urgent">🔴 Urgent</span>`
         : `<span class="badge badge-ok">OK</span>`;
+      const racheterBtn = item.aAcheter
+        ? `<button class="racheter-btn active" onclick="toggleRacheter('${esc(item.produit)}',false,this)" title="Retirer de la liste d'achat">🛒</button>`
+        : `<button class="racheter-btn" onclick="toggleRacheter('${esc(item.produit)}',true,this)" title="Ajouter à la liste d'achat">🛒</button>`;
       html+=`<div class="stock-item ${item.urgent?'urgent':''}">
         <span class="item-emoji">${getEmoji(item.type)}</span>
         <div class="item-info">
@@ -466,6 +479,7 @@ function renderStockList() {
         </div>
         <div class="item-right">
           ${badge}
+          ${racheterBtn}
           <button class="trash-btn" onclick="deleteItem('${esc(item.produit)}')">🗑</button>
         </div>
       </div>`;
@@ -503,11 +517,26 @@ function renderRacheter() {
   const items = allStock.filter(i=>i.aAcheter);
   if(!items.length){ wrap.innerHTML='<div class="empty" style="padding:1rem"><span class="empty-icon">✅</span>Rien à racheter.</div>'; return; }
   wrap.innerHTML = items.map(i=>`
-    <div class="stock-item">
+    <div class="stock-item" style="flex-wrap:wrap;gap:8px;padding:13px">
       <span class="item-emoji">${getEmoji(i.type)}</span>
       <div class="item-info"><div class="item-name">${i.produit}</div><div class="item-meta">${i.type||''}</div></div>
-      <span class="badge" style="background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,179,71,.3)">🛒 À acheter</span>
+      <button class="achete-btn" onclick="ouvrirModalAchat('${esc(i.produit)}','${esc(i.type||'')}')">✓ Acheté</button>
     </div>`).join('');
+}
+
+// Ouvre la modal d'ajout préremplie avec le nom du produit à racheter
+function ouvrirModalAchat(nom, type) {
+  // Pré-remplir les champs
+  document.getElementById('add-nom').value = nom;
+  document.getElementById('add-cat').value = type;
+  document.getElementById('add-qty').value = '';
+  document.getElementById('add-peremption').value = '';
+  document.getElementById('add-urgent').checked = false;
+  // Date du jour par défaut
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('add-achat').value = today;
+  // Ouvrir la modal
+  document.getElementById('add-modal').classList.add('open');
 }
 
 // ── RECETTES ─────────────────────────────────────────────────
@@ -543,19 +572,105 @@ function recipeCardHTML(r, highlight) {
 }
 
 // ── MEAL PREP ─────────────────────────────────────────────────
+
+// Convertit "5 janvier" / "2 février" etc. en objet Date de l'année courante
+function parseFrDate(str) {
+  if(!str) return null;
+  const mois = {janvier:0,février:1,mars:2,avril:3,mai:4,juin:5,
+    juillet:6,août:7,septembre:8,octobre:9,novembre:10,décembre:11};
+  // Le sheet renvoie parfois un timestamp Excel (nombre de jours depuis 1900)
+  if(typeof str === 'number' || /^\d+$/.test(String(str).trim())) {
+    // Timestamp Excel → Date JS
+    const d = new Date(Math.round((Number(str) - 25569) * 86400 * 1000));
+    return isNaN(d) ? null : d;
+  }
+  const s = String(str).toLowerCase().trim();
+  const parts = s.split(/\s+/);
+  if(parts.length < 2) return null;
+  const jour = parseInt(parts[0]);
+  const m = mois[parts[1]];
+  if(isNaN(jour) || m === undefined) return null;
+  const year = new Date().getFullYear();
+  return new Date(year, m, jour);
+}
+
+let historiqueVisible = false;
+
+function toggleHistorique() {
+  historiqueVisible = !historiqueVisible;
+  const past = document.getElementById('mealprep-past');
+  const btn  = document.getElementById('histo-btn');
+  past.style.display = historiqueVisible ? 'block' : 'none';
+  btn.textContent = historiqueVisible ? '📜 Masquer l'historique' : '📜 Voir l'historique';
+}
+
+function weekCardHTML(w, highlight) {
+  const borderStyle = highlight ? 'border-color:var(--accent);background:rgba(124,107,255,.06)' : '';
+  const currentBadge = highlight ? '<span class="badge" style="background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(124,107,255,.3)">📅 Cette semaine</span>' : '';
+  return `<div class="week-card" style="${borderStyle}">
+    <div class="week-header">
+      <div class="week-name">${w.semaine} ${currentBadge}</div>
+      <div class="week-dates">${w.du} → ${w.au}</div>
+    </div>
+    ${[w.plat1,w.plat2,w.plat3].filter(Boolean).map(p=>`<div class="week-plat">🍱 ${p}</div>`).join('')}
+    ${w.enCas?`<div class="week-plat">🍎 ${w.enCas}</div>`:''}
+    ${w.bonus?`<div class="week-plat">🎁 ${w.bonus}</div>`:''}
+  </div>`;
+}
+
 function renderMealPrep() {
-  const wrap = document.getElementById('mealprep-list');
+  const wrapCurrent = document.getElementById('mealprep-current');
+  const wrapFuture  = document.getElementById('mealprep-future');
+  const wrapPast    = document.getElementById('mealprep-past');
+
   const weeks = mealPrepData.filter(w=>w.plat1||w.plat2||w.plat3);
-  if(!weeks.length){ wrap.innerHTML='<div class="empty"><span class="empty-icon">📅</span>Aucun meal prep planifié.</div>'; return; }
-  wrap.innerHTML = weeks.map(w=>`
-    <div class="week-card">
-      <div class="week-header">
-        <div class="week-name">${w.semaine}</div>
-        <div class="week-dates">${w.du} → ${w.au}</div>
-      </div>
-      ${[w.plat1,w.plat2,w.plat3].filter(Boolean).map(p=>`<div class="week-plat">🍱 ${p}</div>`).join('')}
-      ${w.enCas?`<div class="week-plat">🍎 ${w.enCas}</div>`:''}
-    </div>`).join('');
+  if(!weeks.length){
+    wrapCurrent.innerHTML='<div class="empty"><span class="empty-icon">📅</span>Aucun meal prep planifié.</div>';
+    wrapFuture.innerHTML=''; wrapPast.innerHTML=''; return;
+  }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  let current=[], future=[], past=[];
+
+  weeks.forEach(w => {
+    const dateAu = parseFrDate(w.au);
+    const dateDu = parseFrDate(w.du);
+
+    if(!dateAu && !dateDu) { future.push(w); return; }
+
+    const fin  = dateAu || dateDu;
+    const debut = dateDu || dateAu;
+
+    if(fin < today) {
+      past.push(w);
+    } else if(debut <= today && today <= fin) {
+      current.push(w);
+    } else {
+      future.push(w);
+    }
+  });
+
+  // Semaine courante en premier et mise en valeur
+  if(current.length) {
+    wrapCurrent.innerHTML =
+      '<p class="section-label" style="margin-top:0">Semaine en cours</p>' +
+      current.map(w=>weekCardHTML(w, true)).join('');
+  } else {
+    wrapCurrent.innerHTML = '<div class="empty" style="padding:.8rem 0 0"><span style="font-size:20px">📅</span> Pas de meal prep cette semaine</div>';
+  }
+
+  // Semaines à venir
+  wrapFuture.innerHTML = future.length
+    ? '<p class="section-label">À venir</p>' + future.map(w=>weekCardHTML(w, false)).join('')
+    : '';
+
+  // Historique (caché par défaut)
+  const pastReversed = [...past].reverse();
+  wrapPast.innerHTML = pastReversed.length
+    ? '<p class="section-label">Historique</p>' + pastReversed.map(w=>weekCardHTML(w, false)).join('')
+    : '<div class="empty" style="padding:1rem 0">Aucun historique.</div>';
 }
 
 // ── AJOUTER ──────────────────────────────────────────────────
@@ -639,6 +754,27 @@ async function removeSelected() {
   btn.disabled=false; btn.textContent='Retirer du stock';
 }
 
+async function toggleRacheter(produit, valeur, btn) {
+  try {
+    await api('updateItem', { produit, aAcheter: valeur });
+    // Mettre à jour l'état local sans recharger tout
+    const item = allStock.find(i=>i.produit===produit);
+    if(item) item.aAcheter = valeur;
+    if(valeur) {
+      btn.classList.add('active');
+      btn.onclick = () => toggleRacheter(produit, false, btn);
+      btn.title = "Retirer de la liste d'achat";
+      showToast('🛒 Ajouté à la liste d'achat');
+    } else {
+      btn.classList.remove('active');
+      btn.onclick = () => toggleRacheter(produit, true, btn);
+      btn.title = "Ajouter à la liste d'achat";
+      showToast('Retiré de la liste d'achat');
+    }
+    renderRacheter();
+  } catch(e) { showToast('⚠️ ' + e.message); }
+}
+
 async function deleteItem(produit) {
   if(!confirm(`Supprimer "${produit}" ?`)) return;
   try {
@@ -667,15 +803,23 @@ function switchTab(name, btn) {
 
 // ── MODALS ────────────────────────────────────────────────────
 function openModal(id) {
-  if(id==='cfg-modal') openCfgModal();
-  else if(id==='remove-modal') openRemoveModal();
-  else document.getElementById(id).classList.add('open');
+  if(id==='cfg-modal') {
+    openCfgModal();
+  } else if(id==='remove-modal') {
+    openRemoveModal();
+  } else {
+    // Pré-remplir la date d'achat avec aujourd'hui si c'est la modal d'ajout
+    if(id==='add-modal') {
+      const today = new Date().toISOString().split('T')[0];
+      const el = document.getElementById('add-achat');
+      if(el && !el.value) el.value = today;
+    }
+    document.getElementById(id).classList.add('open');
+  }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function closeModalOutside(e, id) { if(e.target===document.getElementById(id)) closeModal(id); }
 
-// Bouton "utiliser" depuis accueil
-document.querySelector('.quick-btn:nth-child(2)').onclick = () => openModal('remove-modal');
 
 // ── HELPERS ───────────────────────────────────────────────────
 function updateTopbar() {
