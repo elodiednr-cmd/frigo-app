@@ -298,6 +298,10 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
       </datalist>
     </div>
     <div class="field">
+      <label>Date d'achat</label>
+      <input type="date" id="add-achat" placeholder="Date d'achat">
+    </div>
+    <div class="field">
       <label>Date de péremption</label>
       <input type="text" id="add-peremption" placeholder="Ex : 31/12/2025">
     </div>
@@ -560,6 +564,7 @@ async function addItem() {
   if(!nom){ showToast('Nom du produit requis'); return; }
   const qty = document.getElementById('add-qty').value.trim();
   const cat = document.getElementById('add-cat').value.trim();
+  const achat = document.getElementById('add-achat').value.trim();
   const peremption = document.getElementById('add-peremption').value.trim();
   const urgent = document.getElementById('add-urgent').checked;
 
@@ -567,9 +572,9 @@ async function addItem() {
   btn.disabled = true; btn.textContent = 'Ajout en cours…';
 
   try {
-    await api('addItem', { produit:nom, quantite:qty||'1', type:cat||'Divers', peremption, urgent });
+    await api('addItem', { produit:nom, quantite:qty||'1', type:cat||'Divers', achat, peremption, urgent });
     // Réinitialiser le formulaire
-    ['add-nom','add-qty','add-cat','add-peremption'].forEach(id=>document.getElementById(id).value='');
+    ['add-nom','add-qty','add-cat','add-achat','add-peremption'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('add-urgent').checked = false;
     closeModal('add-modal');
     await refreshAll();
