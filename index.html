@@ -71,6 +71,14 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .badge-ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,.3)}
 .trash-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:8px;border-radius:8px;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center}
 .trash-btn:active{color:var(--red)}
+.stock-item{cursor:pointer;transition:background .15s}
+.stock-item:active{background:rgba(124,107,255,.08)}
+.qty-modal-produit{font-size:15px;font-weight:600;text-align:center;color:var(--text)}
+.qty-input{width:100%;padding:15px 16px;background:var(--bg3);border:2px solid var(--accent);border-radius:var(--radius-sm);color:var(--text);font-size:20px;font-weight:500;outline:none;font-family:inherit;text-align:center;min-height:56px}
+.qty-input:focus{border-color:var(--accent2)}
+.qty-row{display:flex;gap:10px}
+.qty-step-btn{flex:1;padding:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:22px;font-weight:600;cursor:pointer;font-family:inherit;min-height:52px}
+.qty-step-btn:active{background:var(--bg2)}
 .racheter-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:8px;border-radius:8px;opacity:.4;transition:opacity .15s,color .15s;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center}
 .racheter-btn.active{color:var(--amber);opacity:1}
 .racheter-btn:active{opacity:.7}
@@ -340,6 +348,22 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   </div>
 </div>
 
+<!-- MODAL : MODIFIER QUANTITÉ -->
+<div class="modal-overlay" id="qty-modal" onclick="closeModalOutside(event,'qty-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Modifier la quantité</div>
+    <div class="qty-modal-produit" id="qty-produit-label">—</div>
+    <div class="qty-row">
+      <button class="qty-step-btn" onclick="adjustQty(-1)">−</button>
+      <input class="qty-input" type="text" id="qty-input" placeholder="Ex : 2 boîtes">
+      <button class="qty-step-btn" onclick="adjustQty(1)">+</button>
+    </div>
+    <button class="btn-primary" onclick="saveQty()">Enregistrer</button>
+    <button class="cancel-btn" onclick="closeModal('qty-modal')">Annuler</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -484,8 +508,8 @@ function renderStockList() {
         ? `<button class="racheter-btn active" onclick="toggleRacheter('${esc(item.produit)}',false,this)" title="Retirer de la liste d'achat">🛒</button>`
         : `<button class="racheter-btn" onclick="toggleRacheter('${esc(item.produit)}',true,this)" title="Ajouter à la liste d'achat">🛒</button>`;
       html+=`<div class="stock-item ${item.urgent?'urgent':''}">
-        <span class="item-emoji">${getEmoji(item.type)}</span>
-        <div class="item-info">
+        <span class="item-emoji" onclick="ouvrirQty('${esc(item.produit)}','${esc(item.quantite||'')}',this)">${getEmoji(item.type)}</span>
+        <div class="item-info" onclick="ouvrirQty('${esc(item.produit)}','${esc(item.quantite||'')}',this)" style="cursor:pointer">
           <div class="item-name">${item.produit}</div>
           <div class="item-meta">${item.quantite||'—'}${item.peremption?' · ⏰ '+item.peremption:''}</div>
         </div>
@@ -792,6 +816,54 @@ async function toggleRacheter(produit, valeur, btn) {
     }
     renderRacheter();
   } catch(e) { showToast('⚠️ ' + e.message); }
+}
+
+// ── MODIFIER QUANTITÉ ─────────────────────────────────────────
+let qtyProduitCourant = '';
+
+function ouvrirQty(produit, quantiteActuelle, el) {
+  // Empêcher la propagation si clic sur bouton enfant
+  if(el && (el.classList.contains('racheter-btn') || el.classList.contains('trash-btn'))) return;
+  qtyProduitCourant = produit;
+  document.getElementById('qty-produit-label').textContent = produit;
+  document.getElementById('qty-input').value = quantiteActuelle || '';
+  document.getElementById('qty-modal').classList.add('open');
+  // Focus sur l'input après animation
+  setTimeout(() => document.getElementById('qty-input').select(), 320);
+}
+
+function adjustQty(delta) {
+  const inp = document.getElementById('qty-input');
+  const val = inp.value.trim();
+  // Si la valeur est un nombre simple, on incrémente/décrémente
+  const num = parseFloat(val);
+  if(!isNaN(num)) {
+    const newVal = Math.max(0, num + delta);
+    inp.value = Number.isInteger(newVal) ? String(newVal) : newVal.toFixed(1);
+  } else {
+    // Valeur textuelle : on place le curseur pour édition manuelle
+    inp.focus();
+    inp.select();
+  }
+}
+
+async function saveQty() {
+  const nouvelleQty = document.getElementById('qty-input').value.trim();
+  if(!nouvelleQty){ showToast('Entre une quantité'); return; }
+  const btn = document.querySelector('#qty-modal .btn-primary');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+  try {
+    await api('updateItem', { produit: qtyProduitCourant, quantite: nouvelleQty });
+    // Mettre à jour le state local
+    const item = allStock.find(i=>i.produit === qtyProduitCourant);
+    if(item) item.quantite = nouvelleQty;
+    closeModal('qty-modal');
+    renderStockList();
+    showToast('✅ Quantité mise à jour');
+  } catch(e) {
+    showToast('⚠️ ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = 'Enregistrer';
 }
 
 async function deleteItem(produit) {
