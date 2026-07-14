@@ -401,8 +401,7 @@ function openCfgModal() {
   const st = document.getElementById('cfg-status');
   if(CFG.url){ st.className='modal-status'; st.textContent='✅ '+CFG.url.slice(0,45)+'…'; }
   else { st.className='modal-status error'; st.textContent='❌ Non configuré'; }
-  // Ouvrir directement sans passer par openModal pour éviter la boucle
-  document.getElementById('cfg-modal').classList.add('open');
+  openModal('cfg-modal');
 }
 
 // ── STATE ────────────────────────────────────────────────────
@@ -506,21 +505,18 @@ function renderStockList() {
         ? `<span class="badge badge-urgent">🔴 Urgent</span>`
         : `<span class="badge badge-ok">OK</span>`;
       const racheterBtn = item.aAcheter
-        ? `<button class="racheter-btn active" data-action="racheter" data-valeur="false" title="Retirer de la liste d'achat">🛒</button>`
-        : `<button class="racheter-btn" data-action="racheter" data-valeur="true" title="Ajouter à la liste d'achat">🛒</button>`;
-      html+=`<div class="stock-item ${item.urgent?'urgent':''}"
-          data-produit="${item.produit.replace(/"/g,'&quot;')}"
-          data-quantite="${String(item.quantite||'').replace(/"/g,'&quot;')}"
-          onclick="handleStockClick(event,this)">
-        <span class="item-emoji">${getEmoji(item.type)}</span>
-        <div class="item-info" style="cursor:pointer">
+        ? `<button class="racheter-btn active" onclick="toggleRacheter('${esc(item.produit)}',false,this)" title="Retirer de la liste d'achat">🛒</button>`
+        : `<button class="racheter-btn" onclick="toggleRacheter('${esc(item.produit)}',true,this)" title="Ajouter à la liste d'achat">🛒</button>`;
+      html+=`<div class="stock-item ${item.urgent?'urgent':''}">
+        <span class="item-emoji" onclick="ouvrirQty('${esc(item.produit)}','${esc(item.quantite||'')}',this)">${getEmoji(item.type)}</span>
+        <div class="item-info" onclick="ouvrirQty('${esc(item.produit)}','${esc(item.quantite||'')}',this)" style="cursor:pointer">
           <div class="item-name">${item.produit}</div>
           <div class="item-meta">${item.quantite||'—'}${item.peremption?' · ⏰ '+item.peremption:''}</div>
         </div>
         <div class="item-right">
           ${badge}
           ${racheterBtn}
-          <button class="trash-btn" data-action="delete" title="Supprimer">🗑</button>
+          <button class="trash-btn" onclick="deleteItem('${esc(item.produit)}')">🗑</button>
         </div>
       </div>`;
     });
@@ -804,20 +800,20 @@ async function removeSelected() {
 async function toggleRacheter(produit, valeur, btn) {
   try {
     await api('updateItem', { produit, aAcheter: valeur });
+    // Mettre à jour l'état local sans recharger tout
     const item = allStock.find(i=>i.produit===produit);
     if(item) item.aAcheter = valeur;
-    // Mettre à jour visuellement le bouton et son data-valeur
-    if(btn) {
-      btn.dataset.valeur = valeur ? 'false' : 'true';
-      if(valeur) {
-        btn.classList.add('active');
-        btn.title = "Retirer de la liste d'achat";
-      } else {
-        btn.classList.remove('active');
-        btn.title = "Ajouter à la liste d'achat";
-      }
+    if(valeur) {
+      btn.classList.add('active');
+      btn.onclick = () => toggleRacheter(produit, false, btn);
+      btn.title = "Retirer de la liste d'achat";
+      showToast('🛒 Ajouté à la liste d\'achat');
+    } else {
+      btn.classList.remove('active');
+      btn.onclick = () => toggleRacheter(produit, true, btn);
+      btn.title = "Ajouter à la liste d'achat";
+      showToast('Retiré de la liste d\'achat');
     }
-    showToast(valeur ? '🛒 Ajouté à la liste d'achat' : 'Retiré de la liste d'achat');
     renderRacheter();
   } catch(e) { showToast('⚠️ ' + e.message); }
 }
@@ -825,41 +821,14 @@ async function toggleRacheter(produit, valeur, btn) {
 // ── MODIFIER QUANTITÉ ─────────────────────────────────────────
 let qtyProduitCourant = '';
 
-// Gestionnaire centralisé : lit les data-attributes, pas de strings inline
-function handleStockClick(event, row) {
-  const produit  = row.dataset.produit;
-  const quantite = row.dataset.quantite;
-
-  // Identifier quel élément a été cliqué
-  const target = event.target;
-  const action = target.closest('[data-action]');
-
-  if(action) {
-    const act = action.dataset.action;
-    if(act === 'delete') {
-      event.stopPropagation();
-      deleteItem(produit);
-      return;
-    }
-    if(act === 'racheter') {
-      event.stopPropagation();
-      const valeur = action.dataset.valeur === 'true';
-      toggleRacheter(produit, valeur, action);
-      return;
-    }
-  }
-
-  // Clic sur la zone info → ouvrir modal quantité
-  if(!target.closest('.item-right')) {
-    ouvrirQty(produit, quantite);
-  }
-}
-
-function ouvrirQty(produit, quantiteActuelle) {
+function ouvrirQty(produit, quantiteActuelle, el) {
+  // Empêcher la propagation si clic sur bouton enfant
+  if(el && (el.classList.contains('racheter-btn') || el.classList.contains('trash-btn'))) return;
   qtyProduitCourant = produit;
   document.getElementById('qty-produit-label').textContent = produit;
   document.getElementById('qty-input').value = quantiteActuelle || '';
   document.getElementById('qty-modal').classList.add('open');
+  // Focus sur l'input après animation
   setTimeout(() => document.getElementById('qty-input').select(), 320);
 }
 
@@ -925,17 +894,19 @@ function switchTab(name, btn) {
 
 // ── MODALS ────────────────────────────────────────────────────
 function openModal(id) {
-  if(id==='remove-modal') {
+  if(id==='cfg-modal') {
+    openCfgModal();
+  } else if(id==='remove-modal') {
     openRemoveModal();
-    return;
+  } else {
+    // Pré-remplir la date d'achat avec aujourd'hui si c'est la modal d'ajout
+    if(id==='add-modal') {
+      const today = new Date().toISOString().split('T')[0];
+      const el = document.getElementById('add-achat');
+      if(el && !el.value) el.value = today;
+    }
+    document.getElementById(id).classList.add('open');
   }
-  // Pré-remplir la date d'achat avec aujourd'hui si c'est la modal d'ajout
-  if(id==='add-modal') {
-    const today = new Date().toISOString().split('T')[0];
-    const el = document.getElementById('add-achat');
-    if(el && !el.value) el.value = today;
-  }
-  document.getElementById(id).classList.add('open');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function closeModalOutside(e, id) { if(e.target===document.getElementById(id)) closeModal(id); }
