@@ -927,7 +927,7 @@ function getEmoji(type) {
   return m[type]||'🥄';
 }
 
-function esc(s) { return s.replace(/'/g,"\\'"); }
+function esc(s) { return String(s == null ? '' : s).replace(/'/g, "\'"); }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
